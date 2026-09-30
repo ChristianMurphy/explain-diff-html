@@ -20,9 +20,10 @@ Built on Geoffrey Litt's explain-diff gist, which set out the four-section
 structure, the quiz, and the self-contained HTML output:
 <https://gist.github.com/geoffreylitt/a29df1b5f9865506e8952488eac3d524>
 
-Three of the question shapes in step 5, and the rule that difficulty belongs in
-the stem rather than in near-identical options, are adapted from the
-learning-opportunities skill by Cat Hicks, used under CC-BY-4.0:
+Three of the question shapes in `references/quiz-design.md`, and the rule that
+difficulty belongs in the stem rather than in near-identical options, are
+adapted from the learning-opportunities skill by Cat Hicks, used under
+CC-BY-4.0:
 <https://github.com/DrCatHicks/learning-opportunities>
 
 ## Requirements
@@ -206,12 +207,19 @@ tree, so nothing you write can be committed by accident:
 
 ```bash
 work="$(mktemp -d)"
+echo "$work"   # write this path out in later steps
 git fetch origin "refs/pull/<n>/head:refs/explain/pr-<n>"       # pull request only
 pr_base="$(gh pr view <n> --json baseRefOid -q .baseRefOid)"    # the commit it opened against
 git fetch origin "$pr_base" ||
   git fetch origin "$(gh pr view <n> --json baseRefName -q .baseRefName)"
 git diff "$pr_base" refs/explain/pr-<n> > "$work/diff.txt"      # base first, then head
 ```
+
+Each tool call starts a new shell, so `$work` is empty in every later command.
+Print the path once, as above. From then on, write that path wherever `<work>`
+appears in the commands below and in step 7. A later command that still says
+`$work` writes to `/diff.txt` or reads `/draft.html`, and fails or checks a file
+that does not exist.
 
 A pull request diffs against its own recorded base, not against the current
 default branch. Three dots against the branch works while the pull request is
@@ -238,7 +246,7 @@ For a branch or the current checkout there is no recorded base, so use the
 three-dot form against the default branch:
 
 ```bash
-git diff "$base"...<ref> > "$work/diff.txt"
+git diff "$base"...<ref> > "<work>/diff.txt"
 ```
 
 Three dots diffs against the merge base, so unrelated commits that landed on the
@@ -247,7 +255,7 @@ base branch since the work started stay out of the page.
 A commit range takes two dots, not three:
 
 ```bash
-git diff "<from>".."<to>" > "$work/diff.txt"   # two dots, endpoint to endpoint
+git diff "<from>".."<to>" > "<work>/diff.txt"   # two dots, endpoint to endpoint
 ```
 
 The two forms agree whenever the older endpoint is an ancestor of the newer one,
@@ -261,7 +269,7 @@ first when either is a tag.
 A single commit is the one target that does not diff against the base at all:
 
 ```bash
-git diff "<sha>^" "<sha>" > "$work/diff.txt"     # two dots, against its parent
+git diff "<sha>^" "<sha>" > "<work>/diff.txt"     # two dots, against its parent
 ```
 
 Three dots would compare against the merge base and drag in every other commit
@@ -481,460 +489,55 @@ judgment and transfer, not recall. See Quiz design below.
 
 ### 4. Diagrams
 
-Pick a small number of diagram families and reuse them across the page. Do not
-use ASCII diagrams; build them in HTML and CSS. The template carries three:
-
-- A simplified version of the app UI, to explain what the user sees change.
-  Skip it for a change with no user-visible surface.
-- A system diagram showing data flow between components. Always include example
-  data on the arrows. Wrap every node after the first with its incoming arrow in
-  a `.step`, as the template shows. The row wraps between steps, so a flow
-  longer than the column stays readable instead of leaving an arrow pointing at
-  nothing. How many nodes fit one line depends on how long their labels are, not
-  on the count, so expect wrapping and keep the labels to a few words. The
-  `.step` wrapper is what makes a wrapped flow read correctly.
-- A node or recursion tree, for syntax trees, nesting, or recursive structures.
-
-For structural diagrams where a node-and-edge picture is clearer, use Mermaid
-loaded from a CDN. Match the diagram type to the change:
-
-- State machine or entity relationship: a state or ER diagram, when the shape
-  of the states or the data is the point.
-- Interaction over time: a sequence diagram, when the change is a
-  request and response exchange, a retry or polling loop, an async handshake,
-  or a back-and-forth between a user, a client, and a service. Prefer it over
-  the data-flow family when the ordering of messages, the waits, and the
-  repeats carry the meaning; keep the data-flow family when one linear path
-  with example payloads says enough.
-- A branching decision, or one thing contained inside another: a flowchart, when
-  the change turns on which branch a value takes, or when the point is that a
-  file, a context, or a component sits inside another. Subgraphs are the only
-  way any of these types draws containment. Use it sparingly: a linear path is
-  the data-flow family's job, and a flowchart drawn for a linear path wastes
-  vertical space and adds nothing.
-
-A sequence diagram is the easiest of these to reach for wrongly. It earns its
-place when ordering, waiting, or a real back-and-forth carries the meaning. When
-both lanes are a single pass with no wait and no reply, the shape is wrong, and a
-participant talking only to itself is the tell.
-
-Validate every Mermaid source before pasting it. Write the diagram to a scratch
-`.mmd` file, run the validator, then paste the source into a
-`<pre class="mermaid">` block.
-
-```bash
-npx -y @probelabs/maid@0.0.29 --strict <file.mmd>
-```
-
-The version is pinned on purpose. `npx -y` installs without prompting, so an
-unpinned name runs whatever npm resolves as latest at that moment, on the
-developer's machine, with no lockfile and no integrity check. The Mermaid CDN
-load in the template is pinned the same way and for the same reason. To move
-versions, change the number here after checking the release, the way you would
-for the CDN below.
-
-Five `--strict` rules catch people out:
-
-- Every node label must be double-quoted. Write `H["SYNOPSIS section"]`, not
-  `H[SYNOPSIS section]`. Unquoted labels parse fine in Mermaid itself, so this
-  one only appears when you validate, which is the reason to validate first.
-- State-diagram transition labels reject hyphens and commas, so phrase labels
-  without them.
-- Flowchart edge labels must use pipe syntax, not quotes. Write
-  `B -->|yes| C`, not `B -- "yes" --> C`.
-- Sequence-diagram `participant ... as` aliases reject commas. Message text and
-  `Note` lines accept them, so only the alias needs rephrasing.
-- An apostrophe inside a double-quoted node label breaks the parse. Write
-  `A["a file only uPortal has"]`, not `A["uPortal's own file"]`.
-
-All five are quick to hit and quick to fix, which is the reason to validate
-before pasting rather than after.
-
-The `.mermaid` container style and a non-blocking loader already ship in the
-template, so a pasted block renders with no extra wiring. The loader pins an
-exact Mermaid version and checks it with a Subresource Integrity hash. To move
-versions, change the `@x.y.z` in the `src` and recompute the hash:
-
-```bash
-curl -sfL <url> | openssl dgst -sha384 -binary | openssl base64 -A
-```
-
-A stale hash makes the browser block the script, and the diagrams then fail
-silently with no console error a reader would notice.
-
-When you paste the validated source into the `<pre class="mermaid">` block,
-HTML-escape `&`, `<`, and `>` the same as a code block. The block is parsed as
-HTML before Mermaid reads its `textContent`, so an unescaped `<br/>` in a label
-is consumed as a real void element and its line break silently vanishes, and a
-bare `<` opens an unclosed tag. The browser decodes the entities back before
-Mermaid parses `textContent`, so arrows such as `-->` survive and an escaped
-`<br/>` renders as a line break.
-
-Color Mermaid nodes only when color carries meaning, and take the colors from
-the template's own tokens so the diagrams match the page:
-
-| Role                        | Fill      | Stroke    |
-| --------------------------- | --------- | --------- |
-| Neutral node, the default   | `#f6f7f9` | `#d7dbdf` |
-| The node the change touches | `#e8eefc` | `#3b6cf6` |
-| Success or accepted path    | `#e4f3ea` | `#1a7f47` |
-| Failure or rejected path    | `#fbe7e9` | `#c62a3b` |
-| Edge case or caveat         | `#fbefe1` | `#b5620a` |
-
-Apply them with `classDef`, and give every `classDef` an explicit `color:` for
-the label text:
-
-```
-classDef ok fill:#e4f3ea,stroke:#1a7f47,color:#16181b
-```
-
-Use the neutral fill as the default and add at most three of the
-meaning-carrying roles to one diagram; past that, the colors stop
-distinguishing anything.
-
-The `color:` is not optional. The template's loader switches Mermaid to its
-dark theme when the reader's system is dark, and that theme paints node labels
-a light grey. The fills above stay light regardless, because `classDef` writes
-them with `!important`. A label left to the theme therefore lands at about
-1.4:1 against its own node, and the diagram is unreadable in dark mode while
-looking correct in light mode. Pinning the text dark holds in both themes and
-measures above 15:1 on every fill in the table.
+Reuse a small number of HTML and CSS diagram families across the page. Add a
+Mermaid diagram, validated first, where a node-and-edge picture is clearer.
+Read `references/diagrams.md`, in this skill's folder, before you draw.
 
 Use callouts for key concepts, definitions, and important edge cases.
 
 ### 5. Quiz design
 
-Each question renders as an interactive multiple-choice block: clicking an
-option reveals whether it was correct and gives feedback that connects the
-choice to the underlying reasoning.
-
-Build the five questions from these shapes, at most two of any one shape:
-
-- Why this approach. Ask why the change is shaped the way it is, and make the
-  distractors the alternatives a competent engineer would actually consider.
-- Trace the path. Give a concrete input and ask what the changed code produces,
-  or which branch it takes.
-- Change one condition. Ask how the behavior differs if a flag, an input, or a
-  precondition were different.
-- Spot the break. Ask what would fail if a specific line were removed or
-  reversed.
-- When would the other choice win. Ask under what circumstances the rejected
-  alternative would have been right, which is the strongest test of transfer.
-- Connect two mechanisms. Ask a question neither mechanism answers alone, so the
-  reader has to hold both at once. A page that explains three mechanisms
-  separately and then tests each separately never finds out whether the reader
-  joined them up.
-- Apply it elsewhere. Take the concept the change turns on and ask how it would
-  land at a different site in the same codebase, one the page has already named.
-  Knowledge tied to a single context stays tied to it.
-- Name the general principle. Ask what the change is an instance of, and make
-  the distractors neighboring principles rather than wrong facts. This is the
-  shape least tied to this particular diff.
-
-Seven rules bind every question, whichever shape it takes:
-
-- Avoid any question whose answer can be copied straight out of the diff. If a
-  reader who has not understood the change can still answer it by pattern
-  matching on a variable name, replace it.
-- Avoid any question the page has already answered. A callout that explains why
-  a guard existed, then a question asking why that guard existed, tests whether
-  the reader scrolled. Check each question against the prose above it, not only
-  against the diff, and move whichever of the two is weaker.
-- Ground each distractor in a plausible misunderstanding, not an obviously
-  wrong throwaway. A distractor a reader can eliminate without thinking teaches
-  nothing, and it makes the correct answer findable by elimination.
-- Keep the options within one question the same length. A reader who has not
-  understood picks the longest option, and the correct answer attracts length
-  because it is the one carrying its own justification. No option may run more
-  than about a quarter longer than the shortest in its question. Then count
-  across the whole quiz: if the longest option is the correct one in more than
-  one or two of the five questions, the page can be answered by word count no
-  matter where the answers sit. The fix is not to pad the distractors, which
-  makes every option unreadable. It is to cut the reasoning out of the correct
-  option and put it in the feedback block, which is where the reasoning belongs,
-  leaving each option as a bare claim.
-- Vary where the correct option sits in the source. The template's script
-  shuffles the options on every page load, so position is random for the reader
-  either way. Vary it anyway. Write each question with its correct answer first,
-  which is how the reasoning falls out, then move it to a different position per
-  question. That keeps the raw HTML honest for anyone reading the
-  file, printing it, or opening it with scripts disabled, where the shuffle never
-  runs. Count the positions before saving.
-- Write each option so it stands alone. The shuffle reorders them, so an option
-  cannot refer to another by position: no "both of the above", no "the first
-  option but for the router path". The feedback block may discuss the options by
-  their content, never by their order.
-- Make a question harder by giving less setup, never by making the options more
-  alike. Difficulty belongs in what the reader has to work out, not in how
-  finely they have to read. Options that differ by a word or two test attention;
-  a stem that withholds a step tests understanding. This also stops the length
-  rule above from being satisfied the wrong way, by grinding three options into
-  near-identical strings nobody can tell apart.
-
-This is a static file, so it cannot pause for the reader's input and respond to
-it. When the reader wants that fuller, interactive method, offer to run a live
-exercise in conversation instead.
+Build the five questions from the question shapes in
+`references/quiz-design.md`, in this skill's folder. Read it before you write a
+question. The file's rules stop a reader from answering by recall, by option
+length, or by position.
 
 ### 6. Humanize the prose
 
 An author misses its own tells. Do not self-edit the draft in the main thread.
 Dispatch a read-only sub-agent that reads the drafted Background, Intuition,
-and Code narrative cold against the catalogue below and returns findings
+and Code narrative cold against the catalogue in
+`references/writing-quality.md`, in this skill's folder, and returns findings
 anchored to the passages they concern, then apply the findings in the main
 thread. A cold read works because the sub-agent has not written the sentences,
-so it cannot read its own intent into them.
+so it cannot read its own intent into them. Read that file before you dispatch:
+it also holds the questions the sub-agent's prompt must ask.
 
 When your tools include no way to dispatch a sub-agent, run the pass inline
 against the catalogue, and say which pass ran when you report the finished
 page. An inline pass is weaker, because the author is reading their own
 sentences. Nothing on the page says which one ran.
 
-The catalogue, trimmed to the tells that actually show up in a technical
-explanation:
-
-- Inflated significance. Calling the change pivotal, crucial, or a milestone.
-  State what it does and let the reader judge.
-- Promotional language. Seamless, robust, powerful, elegant, comprehensive.
-- Overused AI vocabulary. Delve, leverage, utilize, underscore, showcase,
-  navigate the complexities, it is worth noting, at its core, in the realm of.
-- Superficial `-ing` analyses. A trailing clause that restates the sentence as
-  significance: "improving performance and enhancing maintainability".
-- Vague attribution. "Widely considered", "generally accepted", "many
-  developers". Name the source or drop the claim.
-- Negative parallelism. "Not only X but also Y", "It is not just A, it is B".
-- Rule of three. Three-item lists and triple adjectives used as rhythm rather
-  than because there are exactly three things.
-- Em dash overuse. Use commas, periods, colons, or semicolons instead.
-- Boldface overuse. Reserve it for a genuine warning. Headings carry structure.
-- Filler. "It is important to note", "in order to", "at the end of the day".
-- Hedge stacking. "May potentially somewhat", "could arguably tend to".
-- Signposting. "In this section we will explore". Just explore it.
-- Generic positive conclusion. A closing paragraph that praises the change and
-  says nothing new.
-- Reflexive systems metaphors. Orchestration, choreography, the beating heart,
-  under the hood, plumbing, used as decoration rather than for a precise
-  literal meaning.
-- Invented compound terms. Coining a capitalised name for a concept the project
-  does not name, then using it as though the reader knows it.
-
-The tells above are about word choice. A page can pass every one of them and
-still lose its reader through density, which is what a technical explanation
-actually fails at. Ask for these too:
-
-- Shorthand before its definition. A term the project uses freely, dropped in
-  before the page says what it is. "Still set in italics the way value names
-  are", where value name has not been introduced.
-- An identifier cited but never named. Referring to a function only as
-  `render.rs:157` while describing what it does, so the reader cannot connect
-  the description to the name when the name finally appears. Name it where you
-  first describe it.
-- A back-reference reaching too far. "Both fall out of the render order below",
-  pointing past three intervening examples. Either move the explanation closer
-  or say where it is.
-- Stacked noun phrases. "The flag-rendering match arms" reads more plainly as
-  "the match arms that render each flag".
-- Participial openers. "Marking the group required tells clap to reject..."
-  becomes "A required group rejects...".
-- Process-order narration. What you searched, tried, and found in the order it
-  happened. The page carries the result.
-- A fact with no consequence. A count or a diffstat that closes a section
-  without telling the reader what it changes for them. Say what it means or cut
-  it.
-- Uniform sentence length. A long run of sentences at the same length reads as
-  generated even when every one is correct. Vary them.
-
-Write in the project's vocabulary, one idea per sentence, active voice with the
-actor named, and the simplest word that carries the meaning.
-
-Give a word one meaning per page. When a term already names something specific
-in the explanation, do not reuse it for a second sense. On a page that discusses
-test files, "test" belongs to those files, so a boolean condition is a check. The
-reader cannot see your intent, only the word.
-
-The sub-agent's prompt must also ask this, because it is what catches the
-failures the catalogue misses:
-
-- Is any sentence doing rhetorical work the evidence does not support? Name
-  every place the page asserts a motive, an intent, a history, or a duration it
-  has not shown. A phrase such as "this looked harmless for years" or "that is a
-  deliberate extension point" reads as fact and is usually invention. Either
-  quote the record that supports it or cut it. When the claim is the author's own
-  inference, the page must say so.
-- Where did you lose the thread, and which terms appear before they are
-  introduced?
-- Does Intuition give the core idea before the walkthrough starts, or does it
-  ask the reader to take the central claim on trust until a later section?
-
 ### 7. Self-check before saving
 
-Start with the anchors, the code claims, and the links. Dispatch a read-only
-sub-agent that re-reads each cited `path:line` at the target ref, checks that
-what the page says about that code still holds, and reports mismatches, then fix
-them before saving. A wrong anchor and a wrong claim both survive every check
-below. The path exists, the line number is a number, and the sentence reads as
-if someone looked. Only re-reading the file at the ref catches either one.
+Check the draft three ways before saving it. A read-only sub-agent re-reads
+every anchor, code claim, and link at the target ref. A script runs the checks
+that are commands. You run the checks that need judgment. Read
+`references/validation.md`, in this skill's folder, before you start: it says
+what each check is and why it exists.
 
-Give that same agent the links. It already holds both halves of every URL, the
-ref and the path, so checking them there costs almost nothing. For each
-reference it reports whether the path resolves in the repo at that ref, and
-whether the href names that same commit in full 40-character form, which is not
-what the provenance line prints. A reference whose
-path does not resolve has to be bare, and an href carrying any other commit
-points a reader at code the page never described.
-
-Ask it two things about ranges specifically, because neither falls out of
-checking that a line number matches. A reference written `path:42-48` needs an
-href ending `#L42-L48`, not `#L42`; an agent told only to match the cited line
-will pass the single-line form. And the end of the range has to be the last line
-actually quoted. Count the lines in the block and compare, rather than trusting
-the label: an off-by-one that runs the range onto a blank line reads as correct
-in every other check.
-
-When your tools include no way to dispatch a sub-agent, do both checks
-yourself. Re-reading a line at a ref is mechanical, so the anchor check loses
-nothing inline. Judging whether a claim still holds is not mechanical, so that
-half is weaker. Read the code first and your own sentence about it second, and
-say that the claim check ran inline when you report the finished page. The
-sub-agent is there to keep whole files out of the main context.
-
-The rest of the step is yours to run. Several checks below read the drafted
-page, so name it once before you start:
+Run the script on the drafted page, with the short commit that the provenance
+line names. `<this skill's folder>` is the folder that holds this `SKILL.md`.
+Write each path and the commit out literally, as step 1 explains:
 
 ```bash
-page="$work/draft.html"   # the drafted page; step 8 writes it to its final home
-sha=abc1234               # the short commit the provenance line names
+sh "<this skill's folder>/scripts/validate-output.sh" \
+  "<work>/draft.html" "<short sha>"
 ```
 
-Do not reuse `$out` here. Step 8 defines it as the output directory, and what
-greps do with a directory varies: some exit 2 with an error, others report no
-matches and exit 0. Either way the check is reading the wrong thing, and on the
-implementations that stay quiet it reports success on a page it never opened.
-
-- Every code block is a `<pre>`, or a styled element whose CSS sets
-  `white-space: pre` or `white-space: pre-wrap`. Scan each block in the HTML
-  source and confirm this; otherwise the browser collapses newlines onto one
-  line.
-
-- Every code block is HTML-escaped: `&`, `<`, and `>` inside a `<pre>` or
-  `<code>` block appear as `&amp;`, `&lt;`, `&gt;`, with the `.del` and `.add`
-  spans wrapping the escaped text. Raw angle brackets are parsed as tags and
-  silently break the document tree and every anchor below.
-
-- Any Mermaid source in a `<pre class="mermaid">` block is HTML-escaped the same
-  way. An unescaped `<br/>` vanishes from the rendered label and a bare `<`
-  breaks the block; escaping lets `textContent` decode them back before Mermaid
-  parses, so `<br/>` and `-->` survive.
-
-- The file is self-contained: CSS and JS inline, no external request except the
-  Mermaid CDN when a Mermaid diagram is present. A source link is not an
-  external request. It fetches nothing until a reader clicks it, so the page
-  still opens offline.
-
-- The page linked the references it should have, and every link names the
-  provenance commit. Count both sides before scanning for mismatches:
-
-  ```bash
-  # flatten, then strip anchors, so a linked reference still counts as a reference
-  refs=$(tr '\n' ' ' < "$page" | sed -E 's#</?a[^>]*>##g; s/  +/ /g' \
-    | grep -oE '(<code[^>]*>|class="filename"[^>]*>) *[^<]*\.[A-Za-z]+:[0-9]+' | wc -l | tr -d ' ')
-  links=$(grep -o 'class="srcref"' "$page" | wc -l | tr -d ' ')
-  echo "references=$refs linked=$links"
-  grep -o 'href="[^"]*/blob/[^"]*"' "$page" | grep -v "$sha"   # expect no output
-  ```
-
-  Both the `tr` and the `sed` are load-bearing. A `.filename` label reads
-  `class="filename">path:line` when bare and `class="filename"><a ...>path:line`
-  once linked, so without the `sed` the count misses exactly the references that
-  succeeded. And `sed` is line-based, while the template writes that anchor
-  across several lines, so without the `tr` the opening tag is never stripped and
-  the same reference goes uncounted. Either way `links` ends up exceeding `refs`
-  on a page where everything worked.
-
-  The mismatch scan on the last line proves nothing on its own: with no links on
-  the page it finds nothing and reports success, which is exactly when the
-  feature is most broken. So compare the counts first. `links` should equal
-  `refs` minus the references you deliberately left bare, and you should be able
-  to name every one of those and say which of the two reasons applies.
-
-- Every table-of-contents link resolves to a section anchor on the page, and
-  every section on the page appears in the table of contents.
-
-- Every unused template placeholder is deleted. A stray `FILL:` comment or an
-  empty diagram block ships as a blank box on the page.
-
-- The quiz is not answerable without reading it. Count the words in every option
-  and check two things: that no option in a question runs more than about a
-  quarter longer than the shortest, and that the longest option is the correct
-  one in no more than one or two of the five questions. Guessing "longest"
-  should do no better than guessing at random, and this is the one quiz defect
-  that survives the shuffle, because shuffling changes position and not length.
-
-- No quiz feedback names an option by its position. The script shuffles the
-  options on every page load, so "the first option" points at a different option
-  than the one the sentence means, and the reader is sent to the wrong text.
-  Name the option by its content instead. This check is mechanical:
-
-  ```bash
-  quiz() { sed -n '/<section id="quiz"/,/<\/section>/p' "$page" \
-    | tr '\n' ' ' | sed -E 's/<[^>]+>/ /g; s/  +/ /g'; }
-
-  quiz | grep -oEi 'the (first|second|third|last) option|the (former|latter)\b'
-  ```
-
-  Expect no output. The `tr` is what makes it work: prose in the HTML wraps, and
-  a line-based `grep` never sees "The" at the end of one line joined to "second
-  option" at the start of the next. Every sample in this repository has a quiz
-  line ending in "the", so the hazard is not rare, it is universal, and a
-  line-based version of this check reports clean on a page that violates the
-  rule. The `sed` range confines the search to the quiz, since the template's own
-  comments say things like "the first render".
-
-  Then run the wider sweep, which is advisory rather than pass or fail:
-
-  ```bash
-  quiz | grep -oEi 'the (first|second|third|last|former|latter)\b[^.]{0,40}'
-  ```
-
-  This one catches an ordinal used on its own, as in "the first names a real
-  practice", which points at a position without ever saying "option". It also
-  fires on ordinary prose such as "the second check" or "the first call", so
-  expect hits and read each one. The question for each is whether the ordinal
-  names a quiz option or a thing in the code. Do not try to tighten the pattern
-  until it returns nothing; across the samples in this repository every hit was
-  the second kind, and a pattern narrow enough to clear them would be narrow
-  enough to miss the first kind.
-
-  Stating the rule is not enough on its own. It has been violated by authors who
-  had it in front of them, and by an author whose check reported clean because it
-  was searching line by line.
-
-- The page is checked in dark mode, not only in light. Any Mermaid diagram is
-  the thing that breaks here: the loader switches Mermaid's theme with the
-  reader's system, while `classDef` fills do not follow, so a diagram that reads
-  correctly in light mode can be unreadable in dark mode. Confirm every node
-  label and edge label is legible against what sits behind it.
-
-- The page is checked at 400px wide, and nothing scrolls sideways. A wide
-  comparison table is the usual cause. The template scrolls `table.vals` in its
-  own box at narrow widths, so a table may overflow its container, but the
-  document must not: `document.documentElement.scrollWidth` has to equal the
-  viewport width.
-
-- Every number the page states about the change is produced by a command, not by
-  looking at a snippet: files changed, lines or characters added or removed,
-  occurrences of a pattern, how many call sites a helper has. Read a count off the
-  screen and a five-line block becomes "four lines". Run it:
-
-  ```bash
-  # lines actually pasted into a <pre>, which a range label has to match
-  sed -n '/<pre>/,/<\/pre>/p' "$page" | sed '1d;$d' | wc -l
-  wc -l fastapi/cli.py                             # lines in a file
-  grep -o 'pattern' path | wc -l                   # occurrences
-  ```
-
-  Then grep the page for every number it states and confirm each against the
-  command that produced it. A count is the easiest claim to get wrong and the
-  easiest for a reader to check, and no other check on this list can catch it.
+The script prints the reference and link counts, and lists the advisory ordinal
+hits for you to read. It exits 1 on a link that names another commit, or on a
+quiz option named by position.
 
 ### 8. Write the file
 
@@ -950,6 +553,10 @@ Save it with a `.html` extension only: confirm the written file ends in
 `.html`, not `.html.txt`, so it opens as a rendered page rather than raw
 source. Report the path as the platform spells it, so a Git Bash user gets a
 path their file manager will open.
+
+In the same report, name each file in `references/` that you read during the
+run. A run that skipped one of those files followed only the matching step's
+summary in this file. The report is the only place that shows it.
 
 ## Template
 

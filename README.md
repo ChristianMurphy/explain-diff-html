@@ -179,7 +179,7 @@ instead, because GitHub serves `.html` as code rather than rendering it.
 
 Every page went through two checks. A read-only pass re-opens each cited
 `file:line` at the target ref and tries to falsify the claim. A cold read then
-tests the prose against the writing rules in `SKILL.md`.
+tests the prose against the skill's writing rules.
 
 ## Requirements
 
@@ -251,8 +251,7 @@ cp -R /tmp/edh/skills/explain-diff-html <your-repo>/.claude/skills/
 Those two paths are Claude Code's. Other agents read skills from their own
 directories. `npx skills add` finds the right one for you.
 
-The agent reads `SKILL.md` and, when it builds a page, `html-template.html`
-beside it. Those two files are the whole skill.
+Copy the directory as a whole: it holds every file the skill uses.
 
 Confirm the install with `npx skills list`, or by asking your agent to list its
 skills. `explain-diff-html` should appear with its description.
@@ -319,6 +318,11 @@ a motive.
    target ref.
 8. Write the file.
 
+Steps 4 to 7 keep a short summary in `SKILL.md` and send the agent to a file in
+`references/` for the detail: `diagrams.md`, `quiz-design.md`,
+`writing-quality.md`, and `validation.md`. The commands step 7 runs are in
+`scripts/validate-output.sh`.
+
 Step 7 carries two checks that exist because of past failures. It confirms
 every code block is HTML-escaped, because a single raw `<` in a pasted diff line
 opens an element HTML never closes, which swallows the rest of the document and
@@ -343,8 +347,8 @@ the skill fills in rather than rebuilding per run:
   tree for recursive structures.
 - The Mermaid loader pins an exact version and checks it with a Subresource
   Integrity hash. To change versions, edit the `@x.y.z` in the `src` and
-  recompute the hash. `SKILL.md` carries the command. A stale hash makes the
-  browser block the script, and the diagrams then fail silently.
+  recompute the hash. `references/diagrams.md` carries the command. A stale
+  hash makes the browser block the script, and the diagrams then fail silently.
 - The output directory and the filename pattern are in `SKILL.md`, under the
   output contract.
 - Every page ends with a credit line: "Generated with explain-diff-html",
