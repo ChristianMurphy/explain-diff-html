@@ -334,6 +334,13 @@ Delegate broad reads to read-only sub-agents so the main context stays lean.
 A sub-agent returns only its summary, so ask for the conclusions and the
 `file:line` anchors you will need later, not for pasted file contents.
 
+Wait for each sub-agent to return before you use what you sent it to find.
+The rule holds here and in steps 6 and 7. Claude Code starts a sub-agent in the
+background by default, so dispatch it in the foreground there. A run that moves
+on without the result drafts from context it never received. In step 7, it
+saves a page its checks never reported on. Never end the run while a sub-agent
+is still running.
+
 ### 3. Draft the four sections
 
 Write in the order below. Aim for concrete, engaging, classic prose, with
@@ -508,10 +515,11 @@ An author misses its own tells. Do not self-edit the draft in the main thread.
 Dispatch a read-only sub-agent that reads the drafted Background, Intuition,
 and Code narrative cold against the catalogue in
 `references/writing-quality.md`, in this skill's folder, and returns findings
-anchored to the passages they concern, then apply the findings in the main
-thread. A cold read works because the sub-agent has not written the sentences,
-so it cannot read its own intent into them. Read that file before you dispatch:
-it also holds the questions the sub-agent's prompt must ask.
+anchored to the passages they concern. Wait for those findings, as step 2 says,
+then apply them in the main thread. A cold read works because the sub-agent has
+not written the sentences, so it cannot read its own intent into them. Read that
+file before you dispatch: it also holds the questions the sub-agent's prompt
+must ask.
 
 When your tools include no way to dispatch a sub-agent, run the pass inline
 against the catalogue, and say which pass ran when you report the finished
@@ -521,10 +529,10 @@ sentences. Nothing on the page says which one ran.
 ### 7. Self-check before saving
 
 Check the draft three ways before saving it. A read-only sub-agent re-reads
-every anchor, code claim, and link at the target ref. A script runs the checks
-that are commands. You run the checks that need judgment. Read
-`references/validation.md`, in this skill's folder, before you start: it says
-what each check is and why it exists.
+every anchor, code claim, and link at the target ref, and you wait for its
+report, as step 2 says. A script runs the checks that are commands. You run the
+checks that need judgment. Read `references/validation.md`, in this skill's
+folder, before you start: it says what each check is and why it exists.
 
 Run the script on the drafted page, with the short commit that the provenance
 line names. `<this skill's folder>` is the folder that holds this `SKILL.md`.
@@ -540,6 +548,11 @@ hits for you to read. It exits 1 on a link that names another commit, or on a
 quiz option named by position.
 
 ### 8. Write the file
+
+Before you write the file, confirm that nothing you started is still running.
+That covers each sub-agent from steps 2, 6, and 7, and any shell command you put
+in the background. A check that is still running has not reported, so the page
+would ship without it.
 
 Write to `$HOME/code-explanations/YYYY-MM-DD-<KEY>-explanation.html`, creating
 the directory if it does not exist:

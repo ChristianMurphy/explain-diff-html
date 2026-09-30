@@ -5,10 +5,11 @@ exists.
 
 Start with the anchors, the code claims, and the links. Dispatch a read-only
 sub-agent that re-reads each cited `path:line` at the target ref, checks that
-what the page says about that code still holds, and reports mismatches, then fix
-them before saving. A wrong anchor and a wrong claim both survive every check
-below. The path exists, the line number is a number, and the sentence reads as
-if someone looked. Only re-reading the file at the ref catches either one.
+what the page says about that code still holds, and reports mismatches. Wait for
+that report, as step 2 of `SKILL.md` says, then fix every mismatch before
+saving. A wrong anchor and a wrong claim both survive every check below. The
+path exists, the line number is a number, and the sentence reads as if someone
+looked. Only re-reading the file at the ref catches either one.
 
 Give that same agent the links. It already holds both halves of every URL, the
 ref and the path, so checking them there costs almost nothing. For each
