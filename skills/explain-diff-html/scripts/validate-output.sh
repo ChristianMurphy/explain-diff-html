@@ -14,6 +14,10 @@ if [ -z "$page" ] || [ -z "$sha" ]; then
   echo "usage: sh validate-output.sh <drafted page> <short commit>" >&2
   exit 2
 fi
+if ! printf '%s\n' "$sha" | grep -qE '^[0-9a-f]{4,40}$'; then
+  echo "usage: <short commit> must be 4 to 40 lowercase hex characters" >&2
+  exit 2
+fi
 
 # A directory passes test -s, and step 8's $out is a directory, so require a
 # regular file as well.
@@ -30,13 +34,16 @@ refs=$(tr '\n' ' ' < "$page" | sed -E 's#</?a[^>]*>##g; s/  +/ /g' \
 links=$(grep -o 'class="srcref"' "$page" | wc -l | tr -d ' ')
 echo "references=$refs linked=$links"
 
-wrong=$(grep -o 'href="[^"]*/blob/[^"]*"' "$page" | grep -v "$sha")
+# A link names the full 40-character sha. GitHub resolves an abbreviation only
+# while the commit is on a branch, so a short sha 404s once a squash merge lands.
+full="/blob/${sha}[0-9a-f]{$((40 - ${#sha}))}/"
+wrong=$(grep -o 'href="[^"]*/blob/[^"]*"' "$page" | grep -vE "$full")
 if [ -n "$wrong" ]; then
-  echo "FAIL: links that do not name $sha:"
+  echo "FAIL: links that do not name the full 40-character sha starting $sha:"
   echo "$wrong"
   status=1
 else
-  echo "pass: no blob link names another commit"
+  echo "pass: every blob link names the full sha of $sha"
 fi
 
 # GitHub renders Markdown, and the rendered view ignores a line anchor. Match

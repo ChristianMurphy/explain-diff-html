@@ -74,10 +74,10 @@ that mistake now fails instead of passing.
   still opens offline.
 
 - The page linked the references it should have, and every link names the
-  provenance commit. The script prints both counts as `references=N linked=M`,
-  then fails on any `/blob/` link that does not name the short commit. It also
-  fails on a link to a `.md` or `.markdown` file that has a line anchor and no
-  `?plain=1`.
+  provenance commit in full. The script prints both counts as
+  `references=N linked=M`, then fails on any `/blob/` link whose sha is not the
+  full 40 characters starting with the short commit. It also fails on a link to
+  a `.md` or `.markdown` file that has a line anchor and no `?plain=1`.
 
   The script's count needs both the `tr` and the `sed`. A `.filename` label
   reads `class="filename">path:line` when bare and
