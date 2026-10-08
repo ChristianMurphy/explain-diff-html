@@ -68,7 +68,9 @@ So on Windows, run the skill from a WSL or Git Bash session. Check first rather
 than discovering it at the first command:
 
 ```bash
-command -v mktemp sed >/dev/null || echo "run this from WSL or Git Bash, not PowerShell"
+for tool in mktemp sed openssl; do
+  command -v "$tool" >/dev/null || echo "missing $tool: run this from WSL or Git Bash, not PowerShell"
+done
 ```
 
 Test for the tools rather than for bash. Every command here is POSIX, so zsh is
@@ -534,6 +536,10 @@ Build the five questions from the question shapes in
 `references/quiz-design.md`, in this skill's folder. Read it before you write a
 question. The file's rules stop a reader from answering by recall, by option
 length, or by position.
+
+Keep the quiz as the last section in `<main>`, where the template puts it, and
+add no section after it. The validation script reads the quiz from its tag to
+`</main>`, so anything placed after it is checked as quiz text.
 
 ### 6. Humanize the prose
 

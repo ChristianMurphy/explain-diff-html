@@ -58,12 +58,20 @@ else
   echo "pass: every Markdown line link carries ?plain=1"
 fi
 
+# The quiz is the last section in <main>, so read from its tag to </main>.
+# A nested </section> cannot end it early, and id can sit anywhere in the tag.
 quiz() {
-  sed -n '/<section id="quiz"/,/<\/section>/p' "$page" \
+  sed -n '/id="quiz"/,/<\/main>/p' "$page" \
     | tr '\n' ' ' | sed -E 's/<[^>]+>/ /g; s/  +/ /g'
 }
 
-positional=$(quiz | grep -oEi 'the (first|second|third|last) option|the (former|latter)\b')
+quiz_text=$(quiz)
+if [ -z "$(printf '%s' "$quiz_text" | tr -d ' ')" ]; then
+  echo "FAIL: no quiz section found, so the quiz checks read nothing"
+  status=1
+fi
+
+positional=$(printf '%s\n' "$quiz_text" | grep -oEi 'the (first|second|third|last) option|the (former|latter)\b')
 if [ -n "$positional" ]; then
   echo "FAIL: quiz text names an option by position:"
   echo "$positional"
@@ -73,6 +81,6 @@ else
 fi
 
 echo "advisory: ordinals in the quiz, read each one:"
-quiz | grep -oEi 'the (first|second|third|last|former|latter)\b[^.]{0,40}' || echo "  none"
+printf '%s\n' "$quiz_text" | grep -oEi 'the (first|second|third|last|former|latter)\b[^.]{0,40}' || echo "  none"
 
 exit $status
