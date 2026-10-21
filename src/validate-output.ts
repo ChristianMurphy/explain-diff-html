@@ -1,10 +1,11 @@
 // The command-line checks from step 7 of SKILL.md. What each check is, and why
 // it exists, is in references/validation.md.
 //
-// Usage: node validate-output.ts <drafted page> <short commit>
+// Usage: node validate-output.js <drafted page> <short commit>
 //
-// Run `npm ci --omit=dev` in this folder once first. Pass literal paths. A
-// shell variable set in an earlier tool call is gone.
+// The skill ships this file bundled as scripts/validate-output.js; `npm run
+// build` rebuilds it. Pass literal paths. A shell variable set in an earlier
+// tool call is gone.
 // Exits 0 when every pass/fail check passes, 1 when one fails, 2 on bad usage.
 
 import { readFileSync, statSync } from "node:fs";
@@ -47,7 +48,7 @@ const hostSuffixes = new Set([
 ]);
 
 function isMadeOf(text: string, characters: string): boolean {
-  return text !== "" && [...text].every((character) => characters.includes(character));
+  return text !== "" && Array.from(text).every((character) => characters.includes(character));
 }
 
 // A reference starts with path.ext:line or path.ext:line-line, then a space, a
@@ -71,8 +72,9 @@ function isReferenceText(text: string): boolean {
   );
 }
 
-// L and digits, then the end or a character that cannot continue a word: #L9,
-// #L3-L7, #L3-7, or #L3?plain=1 typed after the hash. #license is a heading anchor.
+// L and digits, then the end, C and a column, or a character that cannot
+// continue a word: #L9, #L3-L7, #L3-7, #L3C5-L4C9, or #L3?plain=1 typed after the
+// hash. #license and #l1cache are heading anchors.
 function isLineAnchor(hash: string): boolean {
   const fragment = hash.slice(1);
   let end = 1;
@@ -81,7 +83,9 @@ function isLineAnchor(hash: string): boolean {
   return (
     fragment[0]?.toLowerCase() === "l" &&
     end > 1 &&
-    (next === undefined || !wordCharacters.includes(next))
+    (next === undefined ||
+      (next.toLowerCase() === "c" && digits.includes(fragment[end + 1] ?? "_")) ||
+      !wordCharacters.includes(next))
   );
 }
 
@@ -106,8 +110,8 @@ function isMarkedBare(reference: Element): boolean {
 
 function isLinked(reference: Element): boolean {
   return (
-    is<AnyNode, Element>(reference, ".srcref *") ||
-    selectOne<AnyNode, Element>(".srcref", reference) !== null
+    is<AnyNode, Element>(reference, "a.srcref *") ||
+    selectOne<AnyNode, Element>("a.srcref", reference) !== null
   );
 }
 
@@ -295,7 +299,7 @@ export function validate(page: Page): { id: string; result: Result }[] {
 function main(args: string[]): number {
   const [path, sha] = args;
   if (!path || !sha) {
-    console.error("usage: node validate-output.ts <drafted page> <short commit>");
+    console.error("usage: node validate-output.js <drafted page> <short commit>");
     return 2;
   }
   if (sha.length < 4 || sha.length > 40 || !isMadeOf(sha, hexDigits)) {
@@ -311,7 +315,7 @@ function main(args: string[]): number {
 
   const document = parsePage(readFileSync(path, "utf8"));
   const references = getReferences(document);
-  const linked = selectAll<AnyNode, Element>(".srcref", document).length;
+  const linked = selectAll<AnyNode, Element>("a.srcref", document).length;
   const marked = references.filter(isMarkedBare).length;
   console.log(`references=${references.length} linked=${linked} marked-bare=${marked}`);
 

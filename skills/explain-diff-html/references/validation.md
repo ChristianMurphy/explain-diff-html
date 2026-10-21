@@ -35,24 +35,23 @@ half is weaker. Read the code first and your own sentence about it second, and
 say that the claim check ran inline when you report the finished page. The
 sub-agent is there to keep whole files out of the main context.
 
-The rest of the step is yours to run. `scripts/validate-output.ts` runs the
+The rest of the step is yours to run. `scripts/validate-output.js` runs the
 checks below that are commands. Give it the drafted page and the short commit
 that the provenance line names. Write both out literally, because a shell
 variable set in an earlier tool call no longer exists. `<this skill's folder>`
 is the folder that holds `SKILL.md`:
 
 ```bash
-[ -f "<this skill's folder>/scripts/node_modules/.package-lock.json" ] ||
-  npm ci --omit=dev --prefix "<this skill's folder>/scripts"
-node "<this skill's folder>/scripts/validate-output.ts" \
+node "<this skill's folder>/scripts/validate-output.js" \
   "<work>/draft.html" "<short sha>"
 ```
 
-If the output has no `pass:` or `FAIL:` line, the script never ran: Node is
-older than 24.12 or the install failed. That is a setup failure, not a page
-failure. Run the command checks in this file by hand, and say
-in your report which ones ran that way. Flatten newlines before you search the
-HTML, because prose wraps in the middle of a phrase.
+A `usage:` line means the arguments are wrong. Fix the page path or the short
+commit and run the command again. If the output has no `pass:`, `FAIL:`, or
+`usage:` line, the script did not finish: Node is missing or too old. That is a
+setup failure, not a page failure. Run the command checks in this file by hand,
+and say in your report which ones ran that way. Flatten newlines before you
+search the HTML, because prose wraps in the middle of a phrase.
 
 Do not pass step 8's `$out` as the page. Step 8 defines it as the output
 directory. The script refuses anything that is not a non-empty file, so that

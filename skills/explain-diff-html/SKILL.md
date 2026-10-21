@@ -41,15 +41,15 @@ Continue when the work still happens another way, and say what was weaker.
 | ------ | ---------------------------------------- | -------------------------------------------------------------------------- |
 | `git`  | Every run                                | Resolving the base, fetching the ref, reading the diff                     |
 | `gh`   | Explaining a pull request                | Fetching the pull request title, body, and URL                             |
-| `node` | Every run, version 24.12 or later        | Validating the page in step 7, and Mermaid sources in step 4 through `npx` |
+| `node` | Every run, version 22.18 or later        | Validating the page in step 7, and Mermaid sources in step 4 through `npx` |
 
 Verify them up front:
 
 ```bash
 command -v git  >/dev/null || echo "git is required"
 node -e 'const [major, minor] = process.versions.node.split(".").map(Number);
-  process.exit(major > 24 || (major === 24 && minor >= 12) ? 0 : 1)' 2>/dev/null ||
-  echo "node 24.12 or later is required"
+  process.exit(major > 22 || (major === 22 && minor >= 18) ? 0 : 1)' 2>/dev/null ||
+  echo "node 22.18 or later is required"
 command -v gh   >/dev/null && gh auth status   # pull request targets only
 ```
 
@@ -606,22 +606,22 @@ line names. `<this skill's folder>` is the folder that holds this `SKILL.md`.
 Write each path and the commit out literally, as step 1 explains:
 
 ```bash
-[ -f "<this skill's folder>/scripts/node_modules/.package-lock.json" ] ||
-  npm ci --omit=dev --prefix "<this skill's folder>/scripts"
-node "<this skill's folder>/scripts/validate-output.ts" \
+node "<this skill's folder>/scripts/validate-output.js" \
   "<work>/draft.html" "<short sha>"
 ```
 
-The first run installs the script's pinned dependencies, so it needs the npm
-registry once. The script prints the reference and link counts, and lists the
-advisory ordinal hits for you to read. It exits 1 on a reference that is neither
-linked nor marked `data-bare`, a link that names another commit, a Markdown line
-link without `?plain=1`, a missing quiz, or a quiz option named by position.
+The script carries its dependencies, so it needs no install and no network. It
+prints the reference and link counts, and lists the advisory ordinal hits for
+you to read. It exits 1 on a reference that is neither linked nor marked
+`data-bare`, a link that names another commit, a Markdown line link without
+`?plain=1`, a missing quiz, or a quiz option named by position.
 
-If the output has no `pass:` or `FAIL:` line, the script never ran: Node is
-older than 24.12 or the install failed. That is a setup failure, not a page
-failure. Run the command checks in `references/validation.md` by hand, and say
-in your report which ones ran that way.
+A `usage:` line means the arguments are wrong. Fix the page path or the short
+commit and run the command again. If the output has no `pass:`, `FAIL:`, or
+`usage:` line, the script did not finish: Node is missing or too old. That is a
+setup failure, not a page failure. Run the command checks in
+`references/validation.md` by hand, and say in your report which ones ran that
+way.
 
 ### 8. Write the file
 

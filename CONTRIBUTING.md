@@ -57,8 +57,7 @@ Please:
    explain-diff-html checkout:
 
    ```sh
-   npm ci --omit=dev --prefix skills/explain-diff-html/scripts
-   node skills/explain-diff-html/scripts/validate-output.ts <page> <short commit>
+   node skills/explain-diff-html/scripts/validate-output.js <page> <short commit>
    ```
 
    The short commit is the one named at the top of the page. Fix what the script
@@ -66,13 +65,17 @@ Please:
 
 ## Changing the validator
 
-The validator is `skills/explain-diff-html/scripts/validate-output.ts`. It needs
-Node 24.12 or later. Install both sets of dependencies, then run the checks CI
-runs:
+The validator's source is `src/validate-output.ts`. The skill ships
+`skills/explain-diff-html/scripts/validate-output.js`, a single file that
+`npm run build` builds from the source with its dependencies inlined. The build
+also writes their licenses to `THIRD-PARTY-LICENSES.txt` beside it. Commit the
+source and both built files: CI fails when the built files do not match the
+source. You need Node 22.18 or later. Install the dependencies, then run the
+checks CI runs:
 
 ```sh
 npm ci
-npm ci --prefix skills/explain-diff-html/scripts
+npm run build
 npm run check
 npm test
 ```
@@ -80,7 +83,8 @@ npm test
 To add a regression case, add a page to `tests/validate-output/pass/` if every
 check should pass, or to `tests/validate-output/fail/<check id>/` if that one
 check should fail. Every link on a case page names the commit
-`0123456789abcdef0123456789abcdef01234567`.
+`0123456789abcdef0123456789abcdef01234567`, except in `fail/full-sha/`, where a
+link names it short or wrong on purpose.
 
 AI-assisted pull requests are welcome. Check the code, the generated page, and
 every claim in the PR body yourself before you open it.

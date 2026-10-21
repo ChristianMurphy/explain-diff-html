@@ -190,7 +190,7 @@ tests the prose against the skill's writing rules.
 | ------ | ---------------------------------------- | -------------------------------------------------------------------------- |
 | `git`  | Every run                                | Resolving the base, fetching the ref, reading the diff                     |
 | `gh`   | Explaining a pull request                | Fetching the pull request title, body, and URL                             |
-| `node` | Every run, version 24.12 or later        | Validating the page in step 7, and Mermaid sources in step 4 through `npx` |
+| `node` | Every run, version 22.18 or later        | Validating the page in step 7, and Mermaid sources in step 4 through `npx` |
 
 `gh` must be authenticated, not only installed. Check with `gh auth status`.
 
@@ -321,7 +321,7 @@ a motive.
 Steps 4 to 7 keep a short summary in `SKILL.md` and send the agent to a file in
 `references/` for the detail: `diagrams.md`, `quiz-design.md`,
 `writing-quality.md`, and `validation.md`. The commands step 7 runs are in
-`scripts/validate-output.ts`.
+`scripts/validate-output.js`, a single file built from `src/validate-output.ts`.
 
 Step 7 carries two checks that exist because of past failures. It confirms
 every code block is HTML-escaped, because a single raw `<` in a pasted diff line
