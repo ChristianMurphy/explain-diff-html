@@ -70,8 +70,12 @@ The validator's source is `src/validate-output.ts`. The skill ships
 `npm run build` builds from the source with its dependencies inlined. The build
 also writes their licenses to `THIRD-PARTY-LICENSES.txt` beside it. Commit the
 source and both built files: CI fails when the built files do not match the
-source. You need Node 22.18 or later. Install the dependencies, then run the
-checks CI runs:
+source. `scripts/package.json` exists only to mark the bundle as a JavaScript
+module, so it loads in a project whose own `package.json` says CommonJS.
+
+Working on the validator needs a Node version that Vite+ supports: 22.18 or
+later on the 22 line, 24.11 or later on the 24 line, or 26 and later. Install
+the dependencies, then run the checks CI runs:
 
 ```sh
 npm ci

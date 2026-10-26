@@ -131,9 +131,9 @@ mistake fails instead of reporting on a page the script never opened.
   phrase split across two lines is common. The parsed text joins those lines.
   The script confines the search to the element whose `id` is `quiz` inside
   `<main>`, since the template's own comments say things like "the first
-  render". It skips `<script>` and `<style>` inside the quiz, because a reader
-  never sees their text. It fails when it finds no quiz text at all, because a
-  check that reads nothing reports clean.
+  render". It skips `<script>`, `<style>`, and `<template>` inside the quiz,
+  because a reader never sees their text. It fails when it finds no quiz text
+  at all, because a check that reads nothing reports clean.
 
   The script then prints a wider sweep, which is advisory rather than pass or
   fail. This one catches an ordinal used on its own, as in "the first names a

@@ -3,8 +3,9 @@
 // To add a case, add a page; this file needs no edit.
 
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vite-plus/test";
 import { checks, parsePage, validate } from "../../src/validate-output.ts";
@@ -55,6 +56,9 @@ for (const checkId of checkIds) {
   test(`fail/${checkId} names a check`, () => {
     expect(checks.map((check) => check.id)).toContain(checkId);
   });
+  test(`fail/${checkId} has at least one page`, () => {
+    expect(getPages(join(failFolder, checkId)).length).toBeGreaterThan(0);
+  });
   for (const path of getPages(join(failFolder, checkId))) {
     test(`fail/${checkId}/${basename(path)}`, () => {
       expect(getFailedCheckIds(path)).toEqual([checkId]);
@@ -89,4 +93,45 @@ test("a directory instead of a page exits 1", () => {
   const { status, stderr } = runScript(passFolder, sha);
   expect(status).toBe(1);
   expect(stderr).toMatch(/^FAIL: /m);
+});
+
+test("a missing page exits 1", () => {
+  const { status, stderr } = runScript(join(passFolder, "absent.html"), sha);
+  expect(status).toBe(1);
+  expect(stderr).toMatch(/^FAIL: /m);
+});
+
+test("a short commit over 40 characters prints a usage line and exits 2", () => {
+  const { status, stderr } = runScript(join(passFolder, "baseline.html"), "a".repeat(41));
+  expect(status).toBe(2);
+  expect(stderr).toMatch(/^usage: /m);
+});
+
+test("a run prints the advisory block", () => {
+  expect(runScript(join(passFolder, "baseline.html"), sha).stdout).toMatch(/^advisory: /m);
+});
+
+test("the counts line reports references, linked, and marked-bare", () => {
+  const { stdout } = runScript(join(passFolder, "baseline.html"), sha);
+  expect(stdout).toMatch(/^references=1 linked=1 marked-bare=0$/m);
+});
+
+// An installed copy takes its module type from the user's project unless
+// scripts/package.json sets it.
+test("an installed copy runs under a CommonJS project", () => {
+  const project = mkdtempSync(join(tmpdir(), "validate-output-"));
+  try {
+    writeFileSync(join(project, "package.json"), '{ "type": "commonjs" }\n');
+    const skill = join(project, ".claude", "skills", "explain-diff-html");
+    cpSync(dirname(dirname(script)), skill, { recursive: true });
+    const { status, stdout } = spawnSync(
+      process.execPath,
+      [join(skill, "scripts", basename(script)), join(passFolder, "baseline.html"), sha],
+      { encoding: "utf8" },
+    );
+    expect(status).toBe(0);
+    expect(stdout).toMatch(/^pass: /m);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+  }
 });
