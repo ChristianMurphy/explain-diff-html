@@ -361,6 +361,20 @@ A sparse pull request body leaves the Background section with no why. When no
 record supplies one, say what the change does and what it enables, and do not
 invent a motivation the record does not support.
 
+When the page says a fact cannot be verified, name the public artifact that
+would let a reader check it: the pull request number and URL, branch name, commit
+SHA, or other concrete ref. Do not leave phrases such as "the earlier pull
+request" or "another branch" unanchored when the source record identifies them.
+Link those artifacts when the host supports it. When an artifact exists only on
+a personal fork, link the upstream pull request that carries it and write the
+SHA or branch name as plain text rather than a fork URL. This rule identifies
+public objects, not people.
+
+Do not name individual contributors on the page, and do not publish unresolved
+claims about whether someone was credited correctly. If attribution is not
+necessary to explain the code change, omit the attribution discussion entirely
+rather than investigating or repeating it.
+
 Delegate broad reads to read-only sub-agents so the main context stays lean.
 A sub-agent returns only its summary, so ask for the conclusions and the
 `file:line` anchors you will need later, not for pasted file contents.
