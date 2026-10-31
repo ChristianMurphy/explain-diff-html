@@ -111,6 +111,11 @@ test("a run prints the advisory block", () => {
   expect(runScript(join(passFolder, "baseline.html"), sha).stdout).toMatch(/^advisory: /m);
 });
 
+test("the advisory lists each ordinal with the rest of its sentence", () => {
+  const { stdout } = runScript(join(passFolder, "advisory-ordinal.html"), sha);
+  expect(stdout).toMatch(/^the second step in the flow\? Pick one$/m);
+});
+
 test("the counts line reports references, linked, and marked-bare", () => {
   const { stdout } = runScript(join(passFolder, "baseline.html"), sha);
   expect(stdout).toMatch(/^references=1 linked=1 marked-bare=0$/m);
