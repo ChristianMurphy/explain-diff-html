@@ -107,8 +107,8 @@ paste an unvalidated Mermaid source: an invalid source fails in the browser with
 no error the reader would notice, leaving a blank gap where the diagram should
 be.
 
-A run whose change warrants none of those four shapes needs no Mermaid, and
-therefore no Node. The hand-built families cover it.
+A run whose change warrants none of those four shapes needs no Mermaid. The
+hand-built families cover it. Step 7 still needs Node to run the validator.
 
 ## Output contract
 
@@ -587,8 +587,8 @@ question. The file's rules stop a reader from answering by recall, by option
 length, or by position.
 
 Keep the quiz as the last section in `<main>`, where the template puts it, and
-add no section after it. The validation script reads the quiz from its tag to
-`</main>`, so anything placed after it is checked as quiz text.
+add no section after it. The validation script reads only the element whose `id`
+is `quiz`, so text placed after it gets none of the quiz checks.
 
 ### 6. Humanize the prose
 
